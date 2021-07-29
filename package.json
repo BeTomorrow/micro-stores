@@ -1,0 +1,26 @@
+{
+	"name": "micro-states",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "tsdx test",
+		"test:watch": "tsdx test --watchAll",
+		"example": "ts-node examples/paginatedStore.ts"
+	},
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"micro-observables": "^1.7.0",
+		"react": "^17.0.2",
+		"ts-node": "^10.1.0"
+	},
+	"devDependencies": {
+		"@types/jest": "^26.0.24",
+		"@types/node": "^16.4.5",
+		"@types/react": "^17.0.15",
+		"prettier": "^2.3.2",
+		"tsdx": "^0.14.1",
+		"typescript": "^4.3.5"
+	}
+}
