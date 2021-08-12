@@ -4,14 +4,19 @@ import { Page } from "../page";
 import { presentItems } from "../utils";
 import { ReferenceStore } from "./store";
 
-export class MappedStore<T, Presented extends T extends { id: string } ? T : never, S extends string = string> {
+export class MappedStore<
+	T,
+	Presented extends T extends { id: string } ? T : never,
+	S extends string = string,
+	Args extends unknown[] = []
+> {
 	_mappedItems = observable(new Map<S, Page<T>>());
 	// private _referenceStore?: T extends { id: string } ? ReferenceStore<T> : undefined;
 	private _referenceStore?: ReferenceStore<Presented>;
 
 	private _deletedItems = observable<Set<string>>(new Set());
 
-	constructor(private readonly _fetchList: (id: S, page: number) => Promise<Page<T>> | Page<T>) {}
+	constructor(private readonly _fetchList: (id: S, page: number, ...args: Args) => Promise<Page<T>> | Page<T>) {}
 
 	present(store: ReferenceStore<T extends { id: string } ? Presented : never>) {
 		this._referenceStore = store;
@@ -53,18 +58,18 @@ export class MappedStore<T, Presented extends T extends { id: string } ? T : nev
 		);
 	}
 
-	async list(id: S): Promise<void> {
-		const result = await this._fetchList(id, 0);
+	async list(id: S, ...args: Args): Promise<void> {
+		const result = await this._fetchList(id, 0, ...args);
 		this._mappedItems.update((items) => new Map(items).set(id, result));
 		this.dispatchChange(id);
 	}
 
-	async listMore(id: S): Promise<void> {
+	async listMore(id: S, ...args: Args): Promise<void> {
 		const currentItems = this._mappedItems.get().get(id);
 		if (!currentItems) {
-			return this.list(id);
+			return this.list(id, ...args);
 		}
-		const newItems = await this._fetchList(id, currentItems.page + 1);
+		const newItems = await this._fetchList(id, currentItems.page + 1, ...args);
 		this._mappedItems.update((items) =>
 			new Map(items).set(id, {
 				...newItems,

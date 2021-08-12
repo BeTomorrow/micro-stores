@@ -3,12 +3,12 @@ import { Page } from "../page";
 import { presentItems } from "../utils";
 import { ReferenceStore } from "./store";
 
-export class PaginatedStore<T, Presented extends T extends { id: string } ? T : never> {
+export class PaginatedStore<T, Presented extends T extends { id: string } ? T : never, Args extends unknown[] = []> {
 	private _paginatedItems = observable<Page<T> | null>(null);
 	private _referenceStore?: ReferenceStore<Presented>;
 	private _deletedItems = observable<Set<string>>(new Set());
 
-	constructor(private readonly _fetchList: (page: number) => Promise<Page<T>> | Page<T>) {}
+	constructor(private readonly _fetchList: (page: number, ...args: Args) => Promise<Page<T>> | Page<T>) {}
 
 	present(store: ReferenceStore<T extends { id: string } ? Presented : never>) {
 		this._referenceStore = store;
@@ -49,17 +49,17 @@ export class PaginatedStore<T, Presented extends T extends { id: string } ? T : 
 		);
 	}
 
-	async list(): Promise<void> {
-		const result = await this._fetchList(0);
+	async list(...args: Args): Promise<void> {
+		const result = await this._fetchList(0, ...args);
 		this._paginatedItems.set(result);
 	}
 
-	async listMore(): Promise<void> {
+	async listMore(...args: Args): Promise<void> {
 		const currentItems = this._paginatedItems.get();
 		if (!currentItems) {
-			return this.list();
+			return this.list(...args);
 		}
-		const newItems = await this._fetchList(currentItems.page + 1);
+		const newItems = await this._fetchList(currentItems.page + 1, ...args);
 		this._paginatedItems.set({
 			...newItems,
 			content: [...currentItems.content, ...newItems.content],

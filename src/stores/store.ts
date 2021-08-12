@@ -25,7 +25,7 @@ export interface ReferenceStore<T extends { id: string }> {
 
 type PathValue<T, P extends string> = O.Path<T, S.Split<P, ".">>;
 
-export class Store<T extends { id: string }> implements ReferenceStore<T> {
+export class Store<T extends { id: string }, Args extends unknown[] = []> implements ReferenceStore<T> {
 	private _itemsById = observable(new Map<string, T>());
 
 	private _onNewElements = new Signal<{ updateId: string; content: T[] }>();
@@ -36,7 +36,7 @@ export class Store<T extends { id: string }> implements ReferenceStore<T> {
 		store: ReferenceStore<{ id: string }>;
 	}[] = [];
 
-	constructor(private readonly _fetch: (id: string) => Promise<T> | T) {}
+	constructor(private readonly _fetch: (id: string, ...args: Args) => Promise<T> | T) {}
 
 	bindProperty<PP extends string, V extends PathValue<T, PP> & { id: string }>(
 		path: F.AutoPath<T, PP>,
@@ -125,8 +125,8 @@ export class Store<T extends { id: string }> implements ReferenceStore<T> {
 		this.onDelete.dispatch(key);
 	}
 
-	async fetch(id: string) {
-		const result = await this._fetch(id);
+	async fetch(id: string, ...args: Args) {
+		const result = await this._fetch(id, ...args);
 		this._itemsById.update((current) => new Map(current).set(id, result));
 		this._onNewElements.dispatch({ updateId: "fetch", content: [result] });
 	}
