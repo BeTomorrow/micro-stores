@@ -26,21 +26,24 @@ describe("A simple paginated Store", () => {
 });
 
 describe("A paginated store binding items stored by ids", () => {
-	const bookStore = new Store((id) => ({
-		id,
-		title: "Fetched",
-	}));
+	const bookStore = new Store(
+		(id) => ({
+			_id: id,
+			title: "Fetched",
+		}),
+		"_id"
+	);
 	const paginatedStore = new PaginatedStore((page: number) => ({
 		page,
 		total_pages: 0,
 		total_size: 0,
 		content: [
 			{
-				id: "1-" + page,
+				_id: "1-" + page,
 				title: "Item 1-" + page,
 			},
 			{
-				id: "2-" + page,
+				_id: "2-" + page,
 				title: "Item 2-" + page,
 			},
 		],

@@ -6,19 +6,19 @@ import { ReferenceStore } from "./store";
 
 export class MappedStore<
 	T,
-	Presented extends T extends { id: string } ? T : never,
+	Presented extends T extends { [k in PresentedKey]: string } ? T : never,
+	PresentedKey extends string,
 	S extends string = string,
 	Args extends unknown[] = []
 > {
 	_mappedItems = observable(new Map<S, Page<T>>());
-	// private _referenceStore?: T extends { id: string } ? ReferenceStore<T> : undefined;
-	private _referenceStore?: ReferenceStore<Presented>;
+	private _referenceStore?: ReferenceStore<Presented, PresentedKey>;
 
 	private _deletedItems = observable<Set<string>>(new Set());
 
 	constructor(private readonly _fetchList: (id: S, page: number, ...args: Args) => Promise<Page<T>> | Page<T>) {}
 
-	present(store: ReferenceStore<T extends { id: string } ? Presented : never>) {
+	present(store: ReferenceStore<T extends { [k in PresentedKey]: string } ? Presented : never, PresentedKey>) {
 		this._referenceStore = store;
 		this._referenceStore.onDelete.add((id) => {
 			this._deletedItems.update((s) => new Set(s).add(id));
@@ -27,13 +27,16 @@ export class MappedStore<
 			if (data === null) {
 				return;
 			}
-			store?.batchUpdate(data.content as readonly (T extends { id: string } ? T : never)[]);
+			store?.batchUpdate(data.content as readonly (T extends { [k in PresentedKey]: string } ? T : never)[]);
 		});
 		return this;
 	}
 
-	bind<U extends T & { id: string }>(store: T extends U ? ReferenceStore<U> : never) {
-		this._referenceStore = store as ReferenceStore<T & { id: string }> as ReferenceStore<Presented>;
+	bind<U extends T & { [k in PresentedKey]: string }>(store: T extends U ? ReferenceStore<U, PresentedKey> : never) {
+		this._referenceStore = store as ReferenceStore<T & { [k in PresentedKey]: string }, PresentedKey> as ReferenceStore<
+			Presented,
+			PresentedKey
+		>;
 		this._referenceStore.onDelete.add((id) => {
 			this._deletedItems.update((s) => new Set(s).add(id));
 		});
@@ -54,7 +57,12 @@ export class MappedStore<
 		return Observable.select(
 			[this._referenceStore.items, observableItems, this._deletedItems],
 			(mapped, listed, deleted) =>
-				presentItems<T & { id: string }>(mapped, listed as Page<T & { id: string }> | null, deleted)
+				presentItems(
+					mapped,
+					listed as Page<T & { [k in PresentedKey]: string }> | null,
+					deleted,
+					this._referenceStore?.primaryKey
+				)
 		);
 	}
 

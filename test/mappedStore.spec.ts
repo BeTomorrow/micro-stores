@@ -28,17 +28,20 @@ describe("A simple mapped Store", () => {
 });
 
 describe("A mapped store binding items stored by ids", () => {
-	const reviewStore = new Store((id) => ({
-		id,
-		title: "Fetched",
-	}));
+	const reviewStore = new Store(
+		(id) => ({
+			_id: id,
+			title: "Fetched",
+		}),
+		"_id"
+	);
 	const mappedReviewStore = new MappedStore((bookId, page) => ({
 		page,
 		total_pages: 2,
 		total_size: 4,
 		content: [
-			{ id: bookId + ": 1-" + page, title: bookId + ": Item 1-" + page },
-			{ id: bookId + ": 2-" + page, title: bookId + ": Item 2-" + page },
+			{ _id: bookId + ": 1-" + page, title: bookId + ": Item 1-" + page },
+			{ _id: bookId + ": 2-" + page, title: bookId + ": Item 2-" + page },
 		],
 	})).bind(reviewStore);
 

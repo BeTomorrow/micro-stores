@@ -16,32 +16,45 @@ import { v4 } from "uuid";
 // type ReturnType<T> = T extends (...args: any) => infer R ? R : unknown;
 // type PageReturnType<T> = T extends (...args: any) => Page<infer R> ? R : unknown;
 
-export interface ReferenceStore<T extends { id: string }> {
+export interface ReferenceStore<T extends { [k in PrimaryKey]: string }, PrimaryKey extends string = "id"> {
+	primaryKey: PrimaryKey;
 	items: Observable<Map<string, T>>;
 	merge(items: readonly T[], updateId?: string): void;
-	batchUpdate(items: readonly (Partial<T> & { id: string })[]): void;
+	batchUpdate(items: readonly (Partial<T> & { [k in PrimaryKey]: string })[]): void;
 	onDelete: Signal<string>;
 }
 
 type PathValue<T, P extends string> = O.Path<T, S.Split<P, ".">>;
 
-export class Store<T extends { id: string }, Args extends unknown[] = []> implements ReferenceStore<T> {
+interface RefProp<K extends string = "id"> {
+	path: string;
+	// primaryKey?: K;
+	store: ReferenceStore<{ [k in K]: string }, K>;
+}
+
+export class Store<
+	T extends { [k in PrimaryKey]: string },
+	PrimaryKey extends string = "id",
+	Args extends unknown[] = []
+> implements ReferenceStore<T, PrimaryKey>
+{
 	private _itemsById = observable(new Map<string, T>());
 
 	private _onNewElements = new Signal<{ updateId: string; content: T[] }>();
 	onDelete = new Signal<string>();
 
-	private referencedProperties: {
-		path: string;
-		store: ReferenceStore<{ id: string }>;
-	}[] = [];
+	private referencedProperties: RefProp<string>[] = [];
 
-	constructor(private readonly _fetch: (id: string, ...args: Args) => Promise<T> | T) {}
+	constructor(
+		private readonly _fetch: (id: string, ...args: Args) => Promise<T> | T,
+		public readonly primaryKey: PrimaryKey = "id" as PrimaryKey
+	) {}
 
-	bindProperty<PP extends string, V extends PathValue<T, PP> & { id: string }>(
-		path: F.AutoPath<T, PP>,
-		referenceStore: ReferenceStore<V>
-	) {
+	bindProperty<
+		PP extends string,
+		V extends PathValue<T, PP> & { [k in OtherKey]: string },
+		OtherKey extends string = "id"
+	>(path: F.AutoPath<T, PP>, referenceStore: ReferenceStore<V, OtherKey>) {
 		this.referencedProperties.push({ path, store: referenceStore });
 		this._onNewElements.add(({ updateId, content }) => {
 			if (updateId === path) {
@@ -74,7 +87,10 @@ export class Store<T extends { id: string }, Args extends unknown[] = []> implem
 					let newItems = [...items];
 					for (const [j, subItemsValues] of subItems.entries()) {
 						const keys = this.referencedProperties[j].path.split(".");
-						newItems = newItems.map(([k, v]) => [k, retrieveReference(v, 0, subItemsValues, keys)]);
+						newItems = newItems.map(([k, v]) => [
+							k,
+							retrieveReference(v, 0, subItemsValues, keys, this.referencedProperties[j].store.primaryKey),
+						]);
 					}
 					return new Map(newItems);
 				}
@@ -88,21 +104,23 @@ export class Store<T extends { id: string }, Args extends unknown[] = []> implem
 	}
 
 	save(item: T) {
-		this._itemsById.update((items) => new Map(items).set(item.id, item));
+		this._itemsById.update((items) => new Map(items).set(item[this.primaryKey], item));
 		this._onNewElements.dispatch({ updateId: "save", content: [item] });
 	}
 	merge(items: T[], updateId = v4()) {
-		this._itemsById.update((current) => new Map([...current, ...items.map((item) => [item.id, item] as const)]));
+		this._itemsById.update(
+			(current) => new Map([...current, ...items.map((item) => [item[this.primaryKey], item] as const)])
+		);
 		this._onNewElements.dispatch({ updateId, content: items });
 	}
 
-	batchUpdate(items: readonly (Partial<T> & { id: string })[]) {
+	batchUpdate(items: readonly (Partial<T> & { [k in PrimaryKey]: string })[]) {
 		this._itemsById.update((current) => {
 			const newMap = new Map(current);
 			items.forEach((item) => {
-				const current = newMap.get(item.id);
+				const current = newMap.get(item[this.primaryKey]);
 				if (current) {
-					newMap.set(item.id, { ...current, ...item });
+					newMap.set(item[this.primaryKey], { ...current, ...item });
 				}
 			});
 
@@ -113,7 +131,7 @@ export class Store<T extends { id: string }, Args extends unknown[] = []> implem
 	update(key: string, updater: (current: T) => T): void {
 		const item = this._itemsById.get().get(key);
 		if (item) {
-			this._itemsById.update((items) => new Map(items).set(item.id, updater(item)));
+			this._itemsById.update((items) => new Map(items).set(item[this.primaryKey], updater(item)));
 		}
 	}
 	remove(key: string) {

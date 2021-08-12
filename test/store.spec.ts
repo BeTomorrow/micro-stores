@@ -24,7 +24,7 @@ describe("A simple store referencing items by ids", () => {
 });
 
 describe("A store using references to another", () => {
-	const authorStore = new Store(getAuthor);
+	const authorStore = new Store(getAuthor, "_id");
 
 	const bramStroker = authorStore.getObservable("bram-stoker");
 
@@ -34,7 +34,7 @@ describe("A store using references to another", () => {
 	it("Update the referenced store when fetching object", async () => {
 		expect(bramStroker.get()).toBeNull();
 		await bookStore.fetch("dracula");
-		expect(bramStroker.get()?.id).toEqual("bram-stoker");
+		expect(bramStroker.get()?._id).toEqual("bram-stoker");
 	});
 
 	it("Uses the referenced store when retrieving object", async () => {
@@ -68,14 +68,14 @@ describe("A store referencing itself", () => {
 
 function getAuthor(id: string) {
 	return {
-		id,
+		_id: id,
 		name: id === "bram-stoker" ? "Bram Stoker Original" : "unknown",
 		age: 10,
 	};
 }
 
 interface Author {
-	id: string;
+	_id: string;
 	name: string;
 	age: number;
 }
@@ -94,7 +94,7 @@ function getBook(id: string): Book {
 		infos: {
 			published: new Date(),
 			author: {
-				id: "bram-stoker",
+				_id: "bram-stoker",
 				name: "Bram Stoker",
 				age: 70,
 			},
