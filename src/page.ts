@@ -1,5 +1,5 @@
 export type Page<T> = {
-	content: T[];
+	content: readonly T[];
 	page: number;
 	total_pages: number;
 	total_size: number;

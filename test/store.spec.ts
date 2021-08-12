@@ -1,100 +1,109 @@
-import { createStore } from "../src/store";
+import { Store } from "../src/stores/store";
 
 describe("A simple store referencing items by ids", () => {
-	const bookStore = createStore({
-		fetch: (id: string) => ({
-			id,
-			title: "Fetched",
-		}),
-	});
+	const bookStore = new Store((id) => ({
+		id,
+		title: "Fetched",
+	}));
 
 	const observedBook = bookStore.getObservable("tested");
 
-	test("Updates the observed item when fetching, saving or deleting", () => {
-		bookStore.fetch("other");
-		expect(observedBook.get()).toBeUndefined();
-		bookStore.fetch("tested");
+	test("Updates the observed item when fetching, saving or deleting", async () => {
+		await bookStore.fetch("other");
+		expect(observedBook.get()).toBeNull();
+		await bookStore.fetch("tested");
+
 		expect(observedBook.get()).toEqual({ id: "tested", title: "Fetched" });
 		bookStore.save({ id: "tested", title: "Updated" });
 		expect(observedBook.get()).toEqual({ id: "tested", title: "Updated" });
 		bookStore.remove("tested");
-		expect(observedBook.get()).toBeUndefined();
+		expect(observedBook.get()).toBeNull();
+		bookStore.merge([{ id: "tested", title: "From Merge" }]);
+		expect(observedBook.get()).toEqual({ id: "tested", title: "From Merge" });
 	});
 });
 
-describe("A simple paginated Store", () => {
-	const bookStore = createStore({
-		list: (page: number) => ({
-			page,
-			total_pages: 0,
-			total_size: 0,
-			content: ["Item 1-" + page, "Item 2-" + page],
-		}),
+describe("A store using references to another", () => {
+	const authorStore = new Store(getAuthor);
+
+	const bramStroker = authorStore.getObservable("bram-stoker");
+
+	const bookStore = new Store(getBook).bindProperty("infos.author", authorStore);
+	const dracula = bookStore.getObservable("dracula");
+
+	it("Update the referenced store when fetching object", async () => {
+		expect(bramStroker.get()).toBeNull();
+		await bookStore.fetch("dracula");
+		expect(bramStroker.get()?.id).toEqual("bram-stoker");
 	});
 
-	const observedBooks = bookStore.paginatedItems;
+	it("Uses the referenced store when retrieving object", async () => {
+		await bookStore.fetch("dracula");
+		expect(dracula.get()?.infos.author.name).toEqual("Bram Stoker");
+		await authorStore.fetch("bram-stoker");
+		expect(bramStroker.get()?.name).toEqual("Bram Stoker Original");
+		expect(dracula.get()?.infos.author.name).toEqual("Bram Stoker Original");
+		authorStore.update("bram-stoker", (current) => ({ ...current, name: "Edited" }));
+		expect(dracula.get()?.infos.author.name).toEqual("Edited");
+	});
+});
 
-	test("Concat new pages to paginated items", () => {
-		expect(observedBooks.get()).toBeNull();
-		bookStore.list();
-		expect(observedBooks.get()?.content).toHaveLength(2);
-		bookStore.listMore();
-		bookStore.listMore();
-		bookStore.listMore();
-		expect(observedBooks.get()?.content).toHaveLength(8);
-		expect(observedBooks.get()?.content[7]).toEqual("Item 2-3");
-		bookStore.list();
-		expect(observedBooks.get()?.content).toHaveLength(2);
+describe("A store referencing itself", () => {
+	const userStore = new Store<User>(() => ({ id: "", name: "" }));
+	userStore.bindProperty("father", userStore);
+
+	userStore.save({
+		id: "one",
+		name: "One",
+	});
+	userStore.save({
+		id: "two",
+		name: "Two",
+		father: {
+			id: "one",
+			name: "Father One",
+		},
 	});
 });
 
-describe("A paginated store presenting items stored by ids", () => {
-	const bookStore = createStore({
-		fetch: (id: string) => ({
-			id,
-			title: "Hello",
-		}),
-		list: (page: number) => ({
-			page,
-			total_pages: 0,
-			total_size: 0,
-			content: [
-				{
-					id: "1-" + page,
-					title: "Item 1-" + page,
-				},
-				{
-					id: "2-" + page,
-					title: "Item 2-" + page,
-				},
-			],
-		}),
-	});
+function getAuthor(id: string) {
+	return {
+		id,
+		name: id === "bram-stoker" ? "Bram Stoker Original" : "unknown",
+		age: 10,
+	};
+}
 
-	const observedBookList = bookStore.paginatedItems;
-	const secondBook = bookStore.getObservable("2-0");
+interface Author {
+	id: string;
+	name: string;
+	age: number;
+}
+interface Book {
+	id: string;
+	title: string;
+	infos: {
+		published: Date;
+		author: Author;
+	};
+}
+function getBook(id: string): Book {
+	return {
+		id,
+		title: "Dracula",
+		infos: {
+			published: new Date(),
+			author: {
+				id: "bram-stoker",
+				name: "Bram Stoker",
+				age: 70,
+			},
+		},
+	};
+}
 
-	test("Last fetched version of book is used in observable", () => {
-		expect(secondBook.get()).toBeUndefined();
-		bookStore.fetch("2-0");
-		expect(secondBook.get()?.title).toEqual("Hello");
-		bookStore.list();
-
-		expect(secondBook.get()?.title).toEqual("Item 2-0");
-		bookStore.listMore();
-		expect(secondBook.get()?.title).toEqual("Item 2-0");
-		bookStore.fetch("2-0");
-		expect(secondBook.get()?.title).toEqual("Hello");
-		expect(observedBookList.get()?.content).toHaveLength(4);
-	});
-
-	test("Removed items from map are not presented in list", () => {
-		expect(observedBookList.get()?.content).toHaveLength(4);
-		bookStore.remove("2-0");
-		expect(secondBook.get()).toBeUndefined();
-		expect(observedBookList.get()?.content).toHaveLength(3);
-		bookStore.fetch("2-0");
-		expect(secondBook.get()?.title).toEqual("Hello");
-		expect(observedBookList.get()?.content).toHaveLength(4);
-	});
-});
+interface User {
+	id: string;
+	name: string;
+	father?: User;
+}
