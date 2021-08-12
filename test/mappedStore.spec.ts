@@ -4,8 +4,8 @@ import { Store } from "../src/stores/store";
 describe("A simple mapped Store", () => {
 	const reviewStore = new MappedStore((bookId, page) => ({
 		page,
-		total_pages: 0,
-		total_size: 0,
+		totalPages: 0,
+		totalSize: 0,
 		content: [bookId + ": Item 1-" + page, bookId + ": Item 2-" + page],
 	}));
 
@@ -37,8 +37,8 @@ describe("A mapped store binding items stored by ids", () => {
 	);
 	const mappedReviewStore = new MappedStore((bookId, page) => ({
 		page,
-		total_pages: 2,
-		total_size: 4,
+		totalPages: 2,
+		totalSize: 4,
 		content: [
 			{ _id: bookId + ": 1-" + page, title: bookId + ": Item 1-" + page },
 			{ _id: bookId + ": 2-" + page, title: bookId + ": Item 2-" + page },
@@ -88,8 +88,8 @@ describe("A mapped store presenting items stored by ids", () => {
 	}));
 	const mappedReviewStore = new MappedStore((bookId, page) => ({
 		page,
-		total_pages: 2,
-		total_size: 4,
+		totalPages: 2,
+		totalSize: 4,
 		content: [
 			{ id: bookId + ": 1-" + page, title: bookId + ": Item 1-" + page },
 			{ id: bookId + ": 2-" + page, title: bookId + ": Item 2-" + page },

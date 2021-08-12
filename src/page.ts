@@ -1,8 +1,8 @@
 export type Page<T> = {
 	content: readonly T[];
 	page: number;
-	total_pages: number;
-	total_size: number;
+	totalPages: number;
+	totalSize: number;
 };
 
 export interface PaginationOptions {

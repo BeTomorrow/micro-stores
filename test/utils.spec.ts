@@ -13,8 +13,8 @@ describe("Presentation of items", () => {
 			{ id: "id4", title: "four" },
 		],
 		page: 0,
-		total_pages: 1,
-		total_size: 1,
+		totalPages: 1,
+		totalSize: 1,
 	};
 	const result = presentItems(fetchedBooks, listedBooks, new Set(["id2"]));
 

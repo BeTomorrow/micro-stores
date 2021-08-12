@@ -6,15 +6,24 @@ import { ReferenceStore } from "./store";
 
 export class MappedStore<
 	T,
+	S extends string,
+	Args extends unknown[],
 	Presented extends T extends { [k in PresentedKey]: string } ? T : never,
-	PresentedKey extends string,
-	S extends string = string,
-	Args extends unknown[] = []
+	PresentedKey extends string
 > {
 	_mappedItems = observable(new Map<S, Page<T>>());
 	private _referenceStore?: ReferenceStore<Presented, PresentedKey>;
-
 	private _deletedItems = observable<Set<string>>(new Set());
+
+	fetching = observable(new Set<S>());
+	fetchingMore = observable(new Set<S>());
+
+	getFetching(id: S) {
+		return this.fetching.select((keys) => keys.has(id));
+	}
+	getFetchingMore(id: S) {
+		return this.fetchingMore.select((keys) => keys.has(id));
+	}
 
 	constructor(private readonly _fetchList: (id: S, page: number, ...args: Args) => Promise<Page<T>> | Page<T>) {}
 
@@ -67,24 +76,47 @@ export class MappedStore<
 	}
 
 	async list(id: S, ...args: Args): Promise<void> {
-		const result = await this._fetchList(id, 0, ...args);
-		this._mappedItems.update((items) => new Map(items).set(id, result));
-		this.dispatchChange(id);
+		if (this.fetching.get().has(id)) {
+			return;
+		}
+		this.fetching.update((current) => new Set(current).add(id));
+		try {
+			const result = await this._fetchList(id, 0, ...args);
+			this._mappedItems.update((items) => new Map(items).set(id, result));
+			this.dispatchChange(id);
+		} finally {
+			this.fetching.update((current) => {
+				const newSet = new Set(current);
+				newSet.delete(id);
+				return newSet;
+			});
+		}
 	}
 
 	async listMore(id: S, ...args: Args): Promise<void> {
+		if (this.fetching.get().has(id) || this.fetchingMore.get().has(id)) {
+			return;
+		}
 		const currentItems = this._mappedItems.get().get(id);
 		if (!currentItems) {
 			return this.list(id, ...args);
 		}
-		const newItems = await this._fetchList(id, currentItems.page + 1, ...args);
-		this._mappedItems.update((items) =>
-			new Map(items).set(id, {
-				...newItems,
-				content: [...currentItems.content, ...newItems.content],
-			})
-		);
-		this.dispatchChange(id);
+		try {
+			const newItems = await this._fetchList(id, currentItems.page + 1, ...args);
+			this._mappedItems.update((items) =>
+				new Map(items).set(id, {
+					...newItems,
+					content: [...currentItems.content, ...newItems.content],
+				})
+			);
+			this.dispatchChange(id);
+		} finally {
+			this.fetching.update((current) => {
+				const newSet = new Set(current);
+				newSet.delete(id);
+				return newSet;
+			});
+		}
 	}
 
 	private onChange = new Signal<{ id: S; data: Page<T> | null }>();

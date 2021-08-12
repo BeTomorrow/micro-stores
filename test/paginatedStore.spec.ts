@@ -4,8 +4,8 @@ import { Store } from "../src/stores/store";
 describe("A simple paginated Store", () => {
 	const bookStore = new PaginatedStore((page) => ({
 		page,
-		total_pages: 0,
-		total_size: 0,
+		totalPages: 0,
+		totalSize: 0,
 		content: ["Item 1-" + page, "Item 2-" + page],
 	}));
 
@@ -35,8 +35,8 @@ describe("A paginated store binding items stored by ids", () => {
 	);
 	const paginatedStore = new PaginatedStore((page: number) => ({
 		page,
-		total_pages: 0,
-		total_size: 0,
+		totalPages: 0,
+		totalSize: 0,
 		content: [
 			{
 				_id: "1-" + page,
@@ -91,8 +91,8 @@ describe("A paginated store presenting items stored by ids", () => {
 	}));
 	const paginatedStore = new PaginatedStore((page: number) => ({
 		page,
-		total_pages: 0,
-		total_size: 0,
+		totalPages: 0,
+		totalSize: 0,
 		content: [
 			{
 				id: "1-" + page,
