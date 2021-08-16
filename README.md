@@ -1,6 +1,6 @@
-# Micro-states
+# Micro-stores
 
-_A state management library featuring observables and immutability_
+_A light state management library featuring observables and immutability_
 
 ## Usage
 
@@ -208,13 +208,13 @@ Just like a _PaginatedStore_, a _MappedStore_ allows you to bind/present another
 
 Main methods and properties:
 
-| Property            | Type                                            | Description                                                                                       |
-| ------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| getFetching         | (key:string) => Observable\<boolean\>           | Is the store fetching initial items for this key?                                                 |
-| getFetchingMore     | (key:string) => Observable\<boolean\>           | Is the store fetching more items for this key?                                                    |
-| getObservablesItems | (key:string) => Observable\<Page\<T\> \| null\> | The observable page of the items                                                                  |
-| list                | (key: string, ...args: Args) => void            | Call the Store `fetchList` function for this key for the first page and erases the existing items |
-| listMore            | (key: string, ...args: Args) => void            | Call the Store `fetchList` function for this key and merge the new items                          |
+| Property           | Type                                            | Description                                                                                       |
+| ------------------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| getFetching        | (key:string) => Observable\<boolean\>           | Is the store fetching initial items for this key?                                                 |
+| getFetchingMore    | (key:string) => Observable\<boolean\>           | Is the store fetching more items for this key?                                                    |
+| getObservableItems | (key:string) => Observable\<Page\<T\> \| null\> | The observable page of the items                                                                  |
+| list               | (key: string, ...args: Args) => void            | Call the Store `fetchList` function for this key for the first page and erases the existing items |
+| listMore           | (key: string, ...args: Args) => void            | Call the Store `fetchList` function for this key and merge the new items                          |
 
 ## Usage with React
 

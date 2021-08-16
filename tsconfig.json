@@ -1,11 +1,11 @@
 {
 	"compilerOptions": {
 		"strict": true,
-		"lib": ["esnext", "dom"],
+		"lib": ["esnext"],
 		"types": ["node"],
 		"jsx": "react",
-		"target": "es5",
-		"module": "commonjs",
+		"target": "es6",
+		"module": "esnext",
 		"moduleResolution": "node",
 		"downlevelIteration": true,
 		"resolveJsonModule": true,

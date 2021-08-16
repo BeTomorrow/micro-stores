@@ -1,15 +1,44 @@
 {
-	"name": "micro-states",
-	"version": "1.0.0",
-	"description": "",
-	"main": "index.js",
+	"name": "micro-stores",
+	"version": "0.0.1",
+	"description": "A light state management library featuring observables and immutability",
+	"main": "dist/index.js",
+	"typings": "dist/index.d.ts",
+	"module": "dist/micro-stores.esm.js",
+	"files": [
+		"dist",
+		"src"
+	],
+	"keywords": [
+		"state",
+		"observable",
+		"typescript",
+		"react",
+		"hook"
+	],
 	"scripts": {
 		"test": "tsdx test --coverage",
 		"test:watch": "tsdx test --watchAll",
-		"example": "ts-node examples/paginatedStore.ts"
+		"example": "ts-node examples/paginatedStore.ts",
+		"lint": "tsdx lint",
+		"build": "tsdx build",
+		"prepublishOnly": "tsdx build && tsdx test"
 	},
-	"author": "",
-	"license": "ISC",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/BeTomorrow/micro-stores.git"
+	},
+	"homepage": "https://github.com/BeTomorrow/micro-stores#readme",
+	"husky": {
+		"hooks": {
+			"pre-commit": "tsdx lint"
+		}
+	},
+	"engines": {
+		"node": ">=10"
+	},
+	"author": "BeTomorrow",
+	"license": "MIT",
 	"peerDependencies": {
 		"react": ">=16.8.0"
 	},
@@ -24,10 +53,12 @@
 		"@types/jest": "^26.0.24",
 		"@types/node": "^16.4.5",
 		"@types/uuid": "^8.3.1",
+		"husky": "^7.0.1",
 		"prettier": "^2.3.2",
 		"react": "^17.0.2",
 		"ts-toolbelt": "^9.5.13",
 		"tsdx": "^0.14.1",
+		"tslib": "^2.3.1",
 		"typescript": "^4.3.5"
 	}
 }

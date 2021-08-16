@@ -109,10 +109,6 @@ describe("A paginated store presenting items stored by ids", () => {
 	const firstBook = bookStore.getObservable("1-0");
 	const secondBook = bookStore.getObservable("2-0");
 
-	// Used in observable list
-	// Updated when listing
-	// Not added when fetching
-
 	test("Last fetched version of book is used in observable", async () => {
 		expect(secondBook.get()).toBeNull();
 		await bookStore.fetch("2-0");

@@ -1,5 +1,5 @@
 import { Observable, useMemoizedObservable, useObservable } from "micro-observables";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Page } from "./page";
 import { MappedStore } from "./stores/mappedStore";
 import { PaginatedStore } from "./stores/paginatedStore";

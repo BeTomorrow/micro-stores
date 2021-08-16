@@ -3,18 +3,6 @@ import { Signal } from "micro-signals";
 import { F, O, S } from "ts-toolbelt";
 import { retrieveReference } from "../utils";
 import { v4 } from "uuid";
-// interface ReferencedProperty<
-// 	T extends { id: string },
-// 	P extends string,
-// 	V = ReferenceStore<O.Path<T, S.Split<P, ".">> & { id: string }>
-// > {
-// 	path: F.AutoPath<T, P>;
-// 	store: V;
-// 	compute?: (initial: ReferenceStore<O.Path<T, S.Split<P, ".">> & { id: string }>) => V;
-// }
-
-// type ReturnType<T> = T extends (...args: any) => infer R ? R : unknown;
-// type PageReturnType<T> = T extends (...args: any) => Page<infer R> ? R : unknown;
 
 export interface ReferenceStore<T extends { [k in PrimaryKey]: string }, PrimaryKey extends string = "id"> {
 	primaryKey: PrimaryKey;
@@ -28,7 +16,6 @@ type PathValue<T, P extends string> = O.Path<T, S.Split<P, ".">>;
 
 interface RefProp<K extends string = "id"> {
 	path: string;
-	// primaryKey?: K;
 	store: ReferenceStore<{ [k in K]: string }, K>;
 }
 
