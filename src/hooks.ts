@@ -11,18 +11,23 @@ export interface AsyncResult<T> {
 	error: Error | null;
 }
 export interface PaginatedDataResult<T, Args extends unknown[]> {
-	fetch: (...args: Args) => Promise<void>;
-	fetchMore: () => Promise<void>;
-	moreLoading: boolean;
-	lastPage: boolean;
-	error: Error | null;
-	loading: boolean;
 	result: readonly T[];
+	loading: boolean;
+	moreLoading: boolean;
+	error: Error | null;
+	lastPage: boolean;
 	totalPages?: number;
 	totalSize?: number;
+	list: (...args: Args) => Promise<void>;
+	listMore: (...args: Args) => Promise<void>;
 }
 
-export function useStore<T extends { id: string }>(id: string, store: Store<T>, deps: unknown[]): AsyncResult<T> {
+export function useStore<T extends { id: string }, Args extends unknown[]>(
+	id: string,
+	store: Store<T, Args>,
+	deps: unknown[],
+	...args: Args
+): AsyncResult<T> {
 	const result = useMemoizedObservable(() => store.getObservable(id), [id]);
 
 	const [loading, setLoading] = useState(!result);
@@ -31,10 +36,10 @@ export function useStore<T extends { id: string }>(id: string, store: Store<T>, 
 	useEffect(() => {
 		setLoading(true);
 		store
-			.fetch(id)
+			.fetch(id, ...args)
 			.catch((e) => setError(e))
 			.finally(() => setLoading(false));
-	}, [id, ...deps]);
+	}, [id, ...deps, ...args]);
 
 	return { result, loading, error };
 }
@@ -50,7 +55,7 @@ export function usePaginatedStore<T, Args extends unknown[]>(
 		loading,
 		moreLoading,
 		...useObservablePaginatedData(
-			paginatedStore.paginatedItems,
+			paginatedStore.items,
 			() => paginatedStore.list(...args),
 			() => paginatedStore.listMore(...args),
 			[...deps, ...args]
@@ -80,14 +85,14 @@ export function useMappedStore<T, S extends string, Args extends unknown[]>(
 
 export function useObservablePaginatedData<T>(
 	observableData: Observable<Page<T> | null>,
-	fetch: () => Promise<void>,
-	fetchMoreData: () => Promise<void>,
+	list: () => Promise<void>,
+	listMoreData: () => Promise<void>,
 	deps: unknown[]
 ) {
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
-		fetch().catch((e) => setError(e));
+		list().catch((e) => setError(e));
 	}, [...deps]);
 
 	const data = useMemoizedObservable(() => observableData, deps);
@@ -97,11 +102,11 @@ export function useObservablePaginatedData<T>(
 	const totalSize = data?.totalSize;
 	const lastPage = totalPages !== undefined && data !== null && data.page >= totalPages;
 
-	const fetchMore = useCallback(async () => {
+	const listMore = useCallback(async () => {
 		if (!totalPages || !data || lastPage) {
 			return;
 		}
-		await fetchMoreData();
+		await listMoreData();
 	}, [totalPages, data, ...deps]);
 
 	return {
@@ -110,7 +115,7 @@ export function useObservablePaginatedData<T>(
 		totalPages,
 		totalSize,
 		lastPage,
-		fetch,
-		fetchMore,
+		list,
+		listMore,
 	};
 }

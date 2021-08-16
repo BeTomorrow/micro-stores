@@ -36,7 +36,7 @@ export class MappedStore<
 			if (data === null) {
 				return;
 			}
-			store?.batchUpdate(data.content as readonly (T extends { [k in PresentedKey]: string } ? T : never)[]);
+			store?.batchUpdateProperties(data.content as readonly (T extends { [k in PresentedKey]: string } ? T : never)[]);
 		});
 		return this;
 	}

@@ -9,7 +9,7 @@ describe("A simple paginated Store", () => {
 		content: ["Item 1-" + page, "Item 2-" + page],
 	}));
 
-	const observedBooks = bookStore.paginatedItems;
+	const observedBooks = bookStore.items;
 
 	test("Concat new pages to paginated items", async () => {
 		expect(observedBooks.get()).toBeNull();
@@ -49,7 +49,7 @@ describe("A paginated store binding items stored by ids", () => {
 		],
 	})).bind(bookStore);
 
-	const observedBookList = paginatedStore.paginatedItems;
+	const observedBookList = paginatedStore.items;
 	const firstBook = bookStore.getObservable("1-0");
 	const secondBook = bookStore.getObservable("2-0");
 
@@ -105,7 +105,7 @@ describe("A paginated store presenting items stored by ids", () => {
 		],
 	})).present(bookStore);
 
-	const observedBookList = paginatedStore.paginatedItems;
+	const observedBookList = paginatedStore.items;
 	const firstBook = bookStore.getObservable("1-0");
 	const secondBook = bookStore.getObservable("2-0");
 

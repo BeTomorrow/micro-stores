@@ -20,7 +20,7 @@ export interface ReferenceStore<T extends { [k in PrimaryKey]: string }, Primary
 	primaryKey: PrimaryKey;
 	items: Observable<Map<string, T>>;
 	merge(items: readonly T[], updateId?: string): void;
-	batchUpdate(items: readonly (Partial<T> & { [k in PrimaryKey]: string })[]): void;
+	batchUpdateProperties(items: readonly (Partial<T> & { [k in PrimaryKey]: string })[]): void;
 	onDelete: Signal<string>;
 }
 
@@ -34,16 +34,15 @@ interface RefProp<K extends string = "id"> {
 
 export class Store<
 	T extends { [k in PrimaryKey]: string },
-	PrimaryKey extends string = "id",
-	Args extends unknown[] = []
+	Args extends unknown[] = [],
+	PrimaryKey extends string = "id"
 > implements ReferenceStore<T, PrimaryKey>
 {
 	private _itemsById = observable(new Map<string, T>());
-
 	private _onNewElements = new Signal<{ updateId: string; content: T[] }>();
-	onDelete = new Signal<string>();
-
 	private referencedProperties: RefProp<string>[] = [];
+
+	onDelete = new Signal<string>();
 
 	constructor(
 		private readonly _fetch: (id: string, ...args: Args) => Promise<T> | T,
@@ -107,14 +106,18 @@ export class Store<
 		this._itemsById.update((items) => new Map(items).set(item[this.primaryKey], item));
 		this._onNewElements.dispatch({ updateId: "save", content: [item] });
 	}
-	merge(items: T[], updateId = v4()) {
+	merge(items: T[], __updateId = v4()) {
 		this._itemsById.update(
 			(current) => new Map([...current, ...items.map((item) => [item[this.primaryKey], item] as const)])
 		);
-		this._onNewElements.dispatch({ updateId, content: items });
+		this._onNewElements.dispatch({ updateId: __updateId, content: items });
 	}
 
-	batchUpdate(items: readonly (Partial<T> & { [k in PrimaryKey]: string })[]) {
+	updateProperties(properties: Partial<T> & { [k in PrimaryKey]: string }) {
+		this.update(properties[this.primaryKey], (current) => ({ ...current, ...properties }));
+	}
+
+	batchUpdateProperties(items: readonly (Partial<T> & { [k in PrimaryKey]: string })[]) {
 		this._itemsById.update((current) => {
 			const newMap = new Map(current);
 			items.forEach((item) => {

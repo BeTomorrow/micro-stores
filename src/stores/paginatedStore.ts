@@ -27,7 +27,7 @@ export class PaginatedStore<
 			if (data === null) {
 				return;
 			}
-			store?.batchUpdate(data.content as readonly (T extends { [k in PresentedKey]: string } ? T : never)[]);
+			store?.batchUpdateProperties(data.content as readonly (T extends { [k in PresentedKey]: string } ? T : never)[]);
 		});
 		return this;
 	}
@@ -49,7 +49,7 @@ export class PaginatedStore<
 		return this;
 	}
 
-	get paginatedItems() {
+	get items() {
 		if (!this._referenceStore) {
 			return this._paginatedItems;
 		}
