@@ -15,6 +15,15 @@ bookStore.fetch("dracula");
 console.log(myFavoriteBook.get()); // { id: "Dracula", ... }
 ```
 
+# ⚠️ Usage with React Native ⚠️
+
+This library depends on [**uuid**](https://github.com/uuidjs/uuid). To use _uuid_, and therefore _micro-stores_ with React Native, you need to follow the steps described at https://github.com/uuidjs/uuid#react-native--expo:
+
+- Install react-native-get-random-values
+- Run a `pod install`
+- Import it at the root of your app:  
+  `import 'react-native-get-random-values';`
+
 ## Micro-observables
 
 This library is quite heavily based on [**micro-observables**](https://github.com/BeTomorrow/micro-observables). You may want to take a look at the `Observable` signature there.
