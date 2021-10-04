@@ -22,12 +22,11 @@ export interface PaginatedDataResult<T, Args extends unknown[]> {
 	listMore: (...args: Args) => Promise<void>;
 }
 
-export function useStore<T extends { id: string }, Args extends unknown[]>(
-	id: string,
-	store: Store<T, Args>,
-	deps: unknown[],
-	...args: Args
-): AsyncResult<T> {
+export function useStore<
+	T extends { [k in PrimaryKey]: string },
+	Args extends unknown[],
+	PrimaryKey extends string = "id"
+>(id: string, store: Store<T, Args, PrimaryKey>, deps: unknown[], ...args: Args): AsyncResult<T> {
 	const result = useMemoizedObservable(() => store.getObservable(id), [id]);
 
 	const [loading, setLoading] = useState(!result);
