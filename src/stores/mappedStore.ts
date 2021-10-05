@@ -7,7 +7,6 @@ import { ReferenceStore } from "./store";
 export class MappedStore<
 	T,
 	S extends string,
-	Args extends unknown[],
 	Presented extends T extends { [k in PresentedKey]: string } ? T : never,
 	PresentedKey extends string
 > {
@@ -25,7 +24,7 @@ export class MappedStore<
 		return this.fetchingMore.select((keys) => keys.has(id));
 	}
 
-	constructor(private readonly _fetchList: (id: S, page: number, ...args: Args) => Promise<Page<T>> | Page<T>) {}
+	constructor(private readonly _fetchList: (id: S, page: number) => Promise<Page<T>> | Page<T>) {}
 
 	present(store: ReferenceStore<T extends { [k in PresentedKey]: string } ? Presented : never, PresentedKey>) {
 		this._referenceStore = store;
@@ -75,13 +74,13 @@ export class MappedStore<
 		);
 	}
 
-	async list(id: S, ...args: Args): Promise<void> {
+	async list(id: S): Promise<void> {
 		if (this.fetching.get().has(id)) {
 			return;
 		}
 		this.fetching.update((current) => new Set(current).add(id));
 		try {
-			const result = await this._fetchList(id, 0, ...args);
+			const result = await this._fetchList(id, 0);
 			this._mappedItems.update((items) => new Map(items).set(id, result));
 			this.dispatchChange(id);
 		} finally {
@@ -93,16 +92,16 @@ export class MappedStore<
 		}
 	}
 
-	async listMore(id: S, ...args: Args): Promise<void> {
+	async listMore(id: S): Promise<void> {
 		if (this.fetching.get().has(id) || this.fetchingMore.get().has(id)) {
 			return;
 		}
 		const currentItems = this._mappedItems.get().get(id);
 		if (!currentItems) {
-			return this.list(id, ...args);
+			return this.list(id);
 		}
 		try {
-			const newItems = await this._fetchList(id, currentItems.page + 1, ...args);
+			const newItems = await this._fetchList(id, currentItems.page + 1);
 			this._mappedItems.update((items) =>
 				new Map(items).set(id, {
 					...newItems,

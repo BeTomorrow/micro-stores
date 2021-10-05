@@ -19,11 +19,8 @@ interface RefProp<K extends string = "id"> {
 	store: ReferenceStore<{ [k in K]: string }, K>;
 }
 
-export class Store<
-	T extends { [k in PrimaryKey]: string },
-	Args extends unknown[] = [],
-	PrimaryKey extends string = "id"
-> implements ReferenceStore<T, PrimaryKey>
+export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends string = "id">
+	implements ReferenceStore<T, PrimaryKey>
 {
 	private _itemsById = observable(new Map<string, T>());
 	private _onNewElements = new Signal<{ updateId: string; content: T[] }>();
@@ -32,7 +29,7 @@ export class Store<
 	onDelete = new Signal<string>();
 
 	constructor(
-		private readonly _fetch: (id: string, ...args: Args) => Promise<T> | T,
+		private readonly _fetch: (id: string) => Promise<T> | T,
 		public readonly primaryKey: PrimaryKey = "id" as PrimaryKey
 	) {}
 
@@ -133,8 +130,8 @@ export class Store<
 		this.onDelete.dispatch(key);
 	}
 
-	async fetch(id: string, ...args: Args) {
-		const result = await this._fetch(id, ...args);
+	async fetch(id: string) {
+		const result = await this._fetch(id);
 		this._itemsById.update((current) => new Map(current).set(id, result));
 		this._onNewElements.dispatch({ updateId: "fetch", content: [result] });
 	}

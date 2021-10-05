@@ -48,10 +48,10 @@ If your object doesn't have an `id` property, you will need to use one, or speci
 
 **Constructor parameters**
 
-| Parameter  | Type                                        | Default Value | Description                                |
-| ---------- | ------------------------------------------- | ------------- | ------------------------------------------ |
-| fetch      | (key: string, ...args) => T \| Promise\<T\> | /             | The function retrieving item by its key    |
-| primaryKey | string                                      | "id"          | The primary key to use to map your objects |
+| Parameter  | Type                               | Default Value | Description                                |
+| ---------- | ---------------------------------- | ------------- | ------------------------------------------ |
+| fetch      | (key: string) => T \| Promise\<T\> | /             | The function retrieving item by its key    |
+| primaryKey | string                             | "id"          | The primary key to use to map your objects |
 
 **Builder Methods**
 
@@ -92,7 +92,7 @@ Main methods and properties:
 | primaryKey            | string                                            | The primary key to use to map your objects                                         |
 | items                 | Observable\<Map\<string, T\>\>                    | The observable of the items mapped by their key                                    |
 | getObservable         | (key: string) => Observable\<T\>                  | Retrieve an observable using its key                                               |
-| fetch                 | (key: string, ...args: Args) => void              | Call the Store `fetch` function and saves the received item                        |
+| fetch                 | (key: string) => void                             | Call the Store `fetch` function and saves the received item                        |
 | save                  | (item: T) => void                                 | Save an item to the Store. If an items exists will the same key, it will be erased |
 | merge                 | (items: T[]) => void                              | Save several items at once                                                         |
 | remove                | (key: string) => void                             | Remove an item from the Store                                                      |
@@ -129,9 +129,9 @@ interface Page {
 
 **Constructor parameters**
 
-| Parameter | Type                                                          | Description                               |
-| --------- | ------------------------------------------------------------- | ----------------------------------------- |
-| fetchList | (page: number, ...args: Args) => Promise<Page<T>> \| Page<T>) | The function retrieving Page by its index |
+| Parameter | Type                                           | Description                               |
+| --------- | ---------------------------------------------- | ----------------------------------------- |
+| fetchList | (page: number) => Promise<Page<T>> \| Page<T>) | The function retrieving Page by its index |
 
 **Builder Methods**
 
@@ -182,8 +182,8 @@ Main methods and properties:
 | fetching       | Observable\<boolean\>           | Is the store fetching initial items ?                                                |
 | fetchingMore   | Observable\<boolean\>           | Is the store fetching more items ?                                                   |
 | paginatedItems | Observable\<Page\<T\> \| null\> | The observable page of the items                                                     |
-| list           | (...args: Args) => void         | Call the Store `fetchList` function for the first page and erases the existing items |
-| listMore       | (...args: Args) => void         | Call the Store `fetchList` function and merge the new items                          |
+| list           | () => void                      | Call the Store `fetchList` function for the first page and erases the existing items |
+| listMore       | () => void                      | Call the Store `fetchList` function and merge the new items                          |
 
 ### MappedStore
 
@@ -203,9 +203,9 @@ To create a _MappedStore_, you have to provide a fetcher function retrieving a p
 
 **Constructor parameters**
 
-| Parameter | Type                                                                      | Description                               |
-| --------- | ------------------------------------------------------------------------- | ----------------------------------------- |
-| fetchList | (id: string, page: number, ...args: Args) => Promise<Page<T>> \| Page<T>) | The function retrieving Page by its index |
+| Parameter | Type                                                       | Description                               |
+| --------- | ---------------------------------------------------------- | ----------------------------------------- |
+| fetchList | (id: string, page: number) => Promise<Page<T>> \| Page<T>) | The function retrieving Page by its index |
 
 **Builder Methods**
 
@@ -222,15 +222,15 @@ Main methods and properties:
 | getFetching        | (key:string) => Observable\<boolean\>           | Is the store fetching initial items for this key?                                                 |
 | getFetchingMore    | (key:string) => Observable\<boolean\>           | Is the store fetching more items for this key?                                                    |
 | getObservableItems | (key:string) => Observable\<Page\<T\> \| null\> | The observable page of the items                                                                  |
-| list               | (key: string, ...args: Args) => void            | Call the Store `fetchList` function for this key for the first page and erases the existing items |
-| listMore           | (key: string, ...args: Args) => void            | Call the Store `fetchList` function for this key and merge the new items                          |
+| list               | (key: string) => void                           | Call the Store `fetchList` function for this key for the first page and erases the existing items |
+| listMore           | (key: string) => void                           | Call the Store `fetchList` function for this key and merge the new items                          |
 
 ## Usage with React
 
 This library makes State Management easier for any nodeJS or browser application, and has been especially thought to be used with React.  
 This is why Micro-stores also gives you hooks to help you manage and retrieve the state of your React project:
 
-### useStore(key: string, store, deps)
+### useStore(key, store, fetchStrategy?, additionalDeps?)
 
 Return the value of the matching the given key, the loading state and the current error. Triggers a re-render when the value changes.
 
@@ -256,7 +256,7 @@ const DraculaBookView = () => {
 };
 ```
 
-### usePaginatedStore(paginatedStore, deps, ...args)
+### usePaginatedStore(paginatedStore, fetchStrategy?, additionalDeps?)
 
 Returns a `PaginatedDataResult` of the given paginated store. Triggers a rerender when these properties change.
 
@@ -280,7 +280,7 @@ const BookView = () => {
 };
 ```
 
-### useMappedStore(key, mappedStore, deps, ...args)
+### useMappedStore(key, mappedStore, fetchStrategy?, additionalDeps?)
 
 Similar to `usePaginatedStore`, only difference being you need to pass in the key you want to fetch.
 
@@ -288,22 +288,26 @@ Similar to `usePaginatedStore`, only difference being you need to pass in the ke
 
 The PaginatedDataResult is defined like this:
 
-| Property    | Type                    | Description                      |
-| ----------- | ----------------------- | -------------------------------- |
-| result      | T[]                     | The current array of results     |
-| loading     | boolean                 | Is the first page being loaded   |
-| moreLoading | boolean                 | Are more items beeing loaded     |
-| error       | Error \|null            | Fetching error                   |
-| lastPage    | boolean                 | Are all the pages fetched        |
-| totalPages? | number \| undefined     | The number of pages              |
-| totalSize?  | number \| undefined     | The total size of the elements   |
-| list        | (...args: Args) => void | Function to fetch the first page |
-| listMore    | (...args: Args) => void | Function to fetch the next page  |
+| Property    | Type                | Description                      |
+| ----------- | ------------------- | -------------------------------- |
+| result      | T[]                 | The current array of results     |
+| loading     | boolean             | Is the first page being loaded   |
+| moreLoading | boolean             | Are more items beeing loaded     |
+| error       | Error \|null        | Fetching error                   |
+| lastPage    | boolean             | Are all the pages fetched        |
+| totalPages? | number \| undefined | The number of pages              |
+| totalSize?  | number \| undefined | The total size of the elements   |
+| list        | () => void          | Function to fetch the first page |
+| listMore    | () => void          | Function to fetch the next page  |
 
-### **⚠️ These hooks allow you to add some custom arguments to your fetch functions.**
+## Fetch Strategy
 
-These arguments are treated as dependencies in the nested hooks, causing re-render or refetch when they change.  
-**This means that if you want to use custom arguments in your fetch functions, you should only use primitives, or wrap your Objects or Array arguments in useMemo() hooks**
+The hooks above allow you to define a Fetch Strategy to decide how often the data should be fetch:
+
+- **FetchStrategy.Always (default)**: The fetch function is called every time the component mounts or a dependency changes
+- **FetchStrategy.Never**: The fetch function is never called from the hook, you want to handle it yourself
+- **FetchStrategy.First**: The fetch function is only called if there is still no result associated with the data (useful if you already fetched the result in a parent component)
+- **FetchStrategy.Once**: The fetch function is called every time the component mounts.
 
 ## Typescript
 

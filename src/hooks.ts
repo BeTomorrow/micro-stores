@@ -1,16 +1,22 @@
 import { Observable, useMemoizedObservable, useObservable } from "micro-observables";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Page } from "./page";
 import { MappedStore } from "./stores/mappedStore";
 import { PaginatedStore } from "./stores/paginatedStore";
 import { Store } from "./stores/store";
 
+export enum FetchStrategy {
+	Always = "always",
+	Never = "never",
+	First = "first",
+	Once = "once",
+}
 export interface AsyncResult<T> {
 	result: T | null;
 	loading: boolean;
 	error: Error | null;
 }
-export interface PaginatedDataResult<T, Args extends unknown[]> {
+export interface PaginatedDataResult<T> {
 	result: readonly T[];
 	loading: boolean;
 	moreLoading: boolean;
@@ -18,36 +24,42 @@ export interface PaginatedDataResult<T, Args extends unknown[]> {
 	lastPage: boolean;
 	totalPages?: number;
 	totalSize?: number;
-	list: (...args: Args) => Promise<void>;
-	listMore: (...args: Args) => Promise<void>;
+	list: () => Promise<void>;
+	listMore: () => Promise<void>;
 }
 
-export function useStore<
-	T extends { [k in PrimaryKey]: string },
-	Args extends unknown[],
-	PrimaryKey extends string = "id"
->(id: string, store: Store<T, Args, PrimaryKey>, deps: unknown[], ...args: Args): AsyncResult<T> {
+export function useStore<T extends { [k in PrimaryKey]: string }, PrimaryKey extends string = "id">(
+	id: string,
+	store: Store<T, PrimaryKey>,
+	fetchStrategy: FetchStrategy = FetchStrategy.Always,
+	additionalDeps: unknown[] = []
+): AsyncResult<T> {
+	const hasFetched = useRef(false);
 	const result = useMemoizedObservable(() => store.getObservable(id), [id]);
 
 	const [loading, setLoading] = useState(!result);
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
+		if (!shoudldFetch(fetchStrategy, result !== null, hasFetched.current)) {
+			return;
+		}
 		setLoading(true);
+		hasFetched.current = true;
 		store
-			.fetch(id, ...args)
+			.fetch(id)
 			.catch((e) => setError(e))
 			.finally(() => setLoading(false));
-	}, [id, ...deps, ...args]);
+	}, [id, fetchStrategy, ...additionalDeps]);
 
 	return { result, loading, error };
 }
 
-export function usePaginatedStore<T, Args extends unknown[]>(
-	paginatedStore: PaginatedStore<T, Args, any, any>,
-	deps: unknown[],
-	...args: Args
-): PaginatedDataResult<T, Args> {
+export function usePaginatedStore<T>(
+	paginatedStore: PaginatedStore<T, any, any>,
+	fetchStrategy: FetchStrategy = FetchStrategy.Always,
+	additionalDeps: unknown[] = []
+): PaginatedDataResult<T> {
 	const loading = useObservable(paginatedStore.fetching);
 	const moreLoading = useObservable(paginatedStore.fetchingMore);
 	return {
@@ -55,19 +67,20 @@ export function usePaginatedStore<T, Args extends unknown[]>(
 		moreLoading,
 		...useObservablePaginatedData(
 			paginatedStore.items,
-			() => paginatedStore.list(...args),
-			() => paginatedStore.listMore(...args),
-			[...deps, ...args]
+			() => paginatedStore.list(),
+			() => paginatedStore.listMore(),
+			fetchStrategy,
+			[...additionalDeps]
 		),
 	};
 }
 
-export function useMappedStore<T, S extends string, Args extends unknown[]>(
+export function useMappedStore<T, S extends string>(
 	id: S,
-	mappedStore: MappedStore<T, S, Args, any, any>,
-	deps: unknown[],
-	...args: Args
-): PaginatedDataResult<T, Args> {
+	mappedStore: MappedStore<T, S, any, any>,
+	fetchStrategy: FetchStrategy = FetchStrategy.Always,
+	additionalDeps: unknown[] = []
+): PaginatedDataResult<T> {
 	const loading = useMemoizedObservable(() => mappedStore.getFetching(id), [id]);
 	const moreLoading = useMemoizedObservable(() => mappedStore.getFetchingMore(id), [id]);
 	return {
@@ -75,9 +88,10 @@ export function useMappedStore<T, S extends string, Args extends unknown[]>(
 		moreLoading,
 		...useObservablePaginatedData(
 			mappedStore.getObservableItems(id),
-			() => mappedStore.list(id, ...args),
-			() => mappedStore.listMore(id, ...args),
-			[id, ...deps]
+			() => mappedStore.list(id),
+			() => mappedStore.listMore(id),
+			fetchStrategy,
+			[id, ...additionalDeps]
 		),
 	};
 }
@@ -86,14 +100,11 @@ export function useObservablePaginatedData<T>(
 	observableData: Observable<Page<T> | null>,
 	list: () => Promise<void>,
 	listMoreData: () => Promise<void>,
+	fetchStrategy: FetchStrategy = FetchStrategy.Always,
 	deps: unknown[]
 ) {
+	const hasFetched = useRef(false);
 	const [error, setError] = useState(null);
-
-	useEffect(() => {
-		list().catch((e) => setError(e));
-	}, [...deps]);
-
 	const data = useMemoizedObservable(() => observableData, deps);
 
 	const result = data?.content ?? [];
@@ -101,12 +112,20 @@ export function useObservablePaginatedData<T>(
 	const totalSize = data?.totalSize;
 	const lastPage = totalPages !== undefined && data !== null && data.page >= totalPages;
 
+	useEffect(() => {
+		if (!shoudldFetch(fetchStrategy, data !== null, hasFetched.current)) {
+			return;
+		}
+		hasFetched.current = true;
+		list().catch((e) => setError(e));
+	}, [...deps, fetchStrategy]);
+
 	const listMore = useCallback(async () => {
 		if (!totalPages || !data || lastPage) {
 			return;
 		}
 		await listMoreData();
-	}, [totalPages, data, ...deps]);
+	}, [totalPages, data, lastPage, ...deps]);
 
 	return {
 		result,
@@ -117,4 +136,17 @@ export function useObservablePaginatedData<T>(
 		list,
 		listMore,
 	};
+}
+
+export function shoudldFetch(strategy: FetchStrategy, hasResult: boolean, hasFetched: boolean) {
+	if (strategy === FetchStrategy.Never) {
+		return false;
+	}
+	if (strategy === FetchStrategy.First && hasResult) {
+		return false;
+	}
+	if (strategy === FetchStrategy.Once && hasFetched) {
+		return false;
+	}
+	return;
 }
