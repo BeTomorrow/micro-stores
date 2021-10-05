@@ -41,7 +41,7 @@ export function useStore<T extends { [k in PrimaryKey]: string }, PrimaryKey ext
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
-		if (!shoudldFetch(fetchStrategy, result !== null, hasFetched.current)) {
+		if (!shouldFetch(fetchStrategy, result !== null, hasFetched.current)) {
 			return;
 		}
 		setLoading(true);
@@ -113,7 +113,7 @@ export function useObservablePaginatedData<T>(
 	const lastPage = totalPages !== undefined && data !== null && data.page >= totalPages;
 
 	useEffect(() => {
-		if (!shoudldFetch(fetchStrategy, data !== null, hasFetched.current)) {
+		if (!shouldFetch(fetchStrategy, data !== null, hasFetched.current)) {
 			return;
 		}
 		hasFetched.current = true;
@@ -138,7 +138,7 @@ export function useObservablePaginatedData<T>(
 	};
 }
 
-export function shoudldFetch(strategy: FetchStrategy, hasResult: boolean, hasFetched: boolean) {
+function shouldFetch(strategy: FetchStrategy, hasResult: boolean, hasFetched: boolean) {
 	if (strategy === FetchStrategy.Never) {
 		return false;
 	}
@@ -148,5 +148,5 @@ export function shoudldFetch(strategy: FetchStrategy, hasResult: boolean, hasFet
 	if (strategy === FetchStrategy.Once && hasFetched) {
 		return false;
 	}
-	return;
+	return true;
 }
