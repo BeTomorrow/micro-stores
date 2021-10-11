@@ -99,6 +99,7 @@ Main methods and properties:
 | update                | (key: string, updater: (current: T) => T) => void | Update an item using an update callback, if it exists                              |
 | updateProperties      | (item: Partial<T>) => void                        | Update an items with specified properties, if it exists                            |
 | batchUpdateProperties | (items: Partial<T>[]) => void                     | Update several items with specific properties, if they exists                      |
+| clear                 | () => void                                        | Clears the store                                                                   |
 | onDelete              | Signal<string>                                    | Called when an item is removed from the Store                                      |
 
 ### PaginatedStore
@@ -224,6 +225,7 @@ Main methods and properties:
 | getObservableItems | (key:string) => Observable\<Page\<T\> \| null\> | The observable page of the items                                                                  |
 | list               | (key: string) => void                           | Call the Store `fetchList` function for this key for the first page and erases the existing items |
 | listMore           | (key: string) => void                           | Call the Store `fetchList` function for this key and merge the new items                          |
+| clear              | () => void                                      | Clears the store                                                                                  |
 
 ## Usage with React
 
@@ -299,6 +301,7 @@ The PaginatedDataResult is defined like this:
 | totalSize?  | number \| undefined | The total size of the elements   |
 | list        | () => void          | Function to fetch the first page |
 | listMore    | () => void          | Function to fetch the next page  |
+| clear       | () => void          | Clears the store                 |
 
 ## Fetch Strategy
 

@@ -96,4 +96,8 @@ export class PaginatedStore<
 			this.fetchingMore.set(false);
 		}
 	}
+
+	clear() {
+		this._paginatedItems.set(null);
+	}
 }

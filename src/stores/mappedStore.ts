@@ -122,4 +122,8 @@ export class MappedStore<
 	private dispatchChange(id: S): void {
 		this.onChange.dispatch({ id, data: this._mappedItems.get().get(id) ?? null });
 	}
+
+	clear() {
+		this._mappedItems.set(new Map());
+	}
 }

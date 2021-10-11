@@ -24,6 +24,8 @@ describe("A simple mapped Store", () => {
 		expect(observedReviews.get()?.content[7]).toEqual("Dracula: Item 2-3");
 		await reviewStore.list("Dracula");
 		expect(observedReviews.get()?.content).toHaveLength(2);
+		reviewStore.clear();
+		expect(observedReviews.get()).toBeNull();
 	});
 });
 

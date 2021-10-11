@@ -22,6 +22,8 @@ describe("A simple paginated Store", () => {
 		expect(observedBooks.get()?.content[7]).toEqual("Item 2-3");
 		await bookStore.list();
 		expect(observedBooks.get()?.content).toHaveLength(2);
+		bookStore.clear();
+		expect(observedBooks.get()).toBeNull();
 	});
 });
 

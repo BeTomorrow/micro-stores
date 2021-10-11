@@ -8,7 +8,7 @@ describe("A simple store referencing items by ids", () => {
 
 	const observedBook = bookStore.getObservable("tested");
 
-	test("Updates the observed item when fetching, saving or deleting", async () => {
+	test("Updates the observed item when fetching, saving, deleting or clearing", async () => {
 		await bookStore.fetch("other");
 		expect(observedBook.get()).toBeNull();
 		await bookStore.fetch("tested");
@@ -20,6 +20,8 @@ describe("A simple store referencing items by ids", () => {
 		expect(observedBook.get()).toBeNull();
 		bookStore.merge([{ id: "tested", title: "From Merge" }]);
 		expect(observedBook.get()).toEqual({ id: "tested", title: "From Merge" });
+		bookStore.clear();
+		expect(observedBook.get()).toBeNull();
 	});
 });
 
