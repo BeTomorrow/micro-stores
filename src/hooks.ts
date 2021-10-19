@@ -110,7 +110,7 @@ export function useObservablePaginatedData<T>(
 	const result = data?.content ?? [];
 	const totalPages = data?.totalPages;
 	const totalSize = data?.totalSize;
-	const lastPage = totalPages !== undefined && data !== null && data.page >= totalPages;
+	const lastPage = totalPages !== undefined && data !== null && data.page >= totalPages - 1;
 
 	useEffect(() => {
 		if (!shouldFetch(fetchStrategy, data !== null, hasFetched.current)) {
