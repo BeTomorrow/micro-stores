@@ -29,28 +29,29 @@ export interface PaginatedDataResult<T> {
 }
 
 export function useStore<T extends { [k in PrimaryKey]: string }, PrimaryKey extends string = "id">(
-	id: string,
+	id: string | null | false | undefined,
 	store: Store<T, PrimaryKey>,
 	fetchStrategy: FetchStrategy = FetchStrategy.Always,
 	additionalDeps: unknown[] = []
 ): AsyncResult<T> {
 	const hasFetched = useRef(false);
-	const result = useMemoizedObservable(() => store.getObservable(id), [id]);
+	const result = useMemoizedObservable(() => store.getObservable(id || ""), [id]);
 
 	const [loading, setLoading] = useState(!result);
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
-		if (!shouldFetch(fetchStrategy, result !== null, hasFetched.current)) {
+		if (!shouldFetch(fetchStrategy, result !== null, hasFetched.current) || !id) {
 			return;
 		}
 		setLoading(true);
+		setError(null);
 		hasFetched.current = true;
 		store
 			.fetch(id)
 			.catch((e) => setError(e))
 			.finally(() => setLoading(false));
-	}, [id, fetchStrategy, ...additionalDeps]);
+	}, [id, fetchStrategy, store, ...additionalDeps]);
 
 	return { result, loading, error };
 }
@@ -70,28 +71,28 @@ export function usePaginatedStore<T>(
 			() => paginatedStore.list(),
 			() => paginatedStore.listMore(),
 			fetchStrategy,
-			[...additionalDeps]
+			[paginatedStore, ...additionalDeps]
 		),
 	};
 }
 
 export function useMappedStore<T, S extends string>(
-	id: S,
+	id: S | null | false | undefined,
 	mappedStore: MappedStore<T, S, any, any>,
 	fetchStrategy: FetchStrategy = FetchStrategy.Always,
 	additionalDeps: unknown[] = []
 ): PaginatedDataResult<T> {
-	const loading = useMemoizedObservable(() => mappedStore.getFetching(id), [id]);
-	const moreLoading = useMemoizedObservable(() => mappedStore.getFetchingMore(id), [id]);
+	const loading = useMemoizedObservable(() => mappedStore.getFetching(id || ("" as S)), [id]);
+	const moreLoading = useMemoizedObservable(() => mappedStore.getFetchingMore(id || ("" as S)), [id]);
 	return {
 		loading,
 		moreLoading,
 		...useObservablePaginatedData(
-			mappedStore.getObservableItems(id),
-			() => mappedStore.list(id),
-			() => mappedStore.listMore(id),
-			fetchStrategy,
-			[id, ...additionalDeps]
+			mappedStore.getObservableItems(id || ("" as S)),
+			() => mappedStore.list(id || ("" as S)),
+			() => mappedStore.listMore(id || ("" as S)),
+			id ? fetchStrategy : FetchStrategy.Never,
+			[id, mappedStore, ...additionalDeps]
 		),
 	};
 }
@@ -117,6 +118,7 @@ export function useObservablePaginatedData<T>(
 			return;
 		}
 		hasFetched.current = true;
+		setError(null);
 		list().catch((e) => setError(e));
 	}, [...deps, fetchStrategy]);
 
