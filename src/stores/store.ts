@@ -134,6 +134,7 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 		const result = await this._fetch(id);
 		this._itemsById.update((current) => new Map(current).set(id, result));
 		this._onNewElements.dispatch({ updateId: "fetch", content: [result] });
+		return this.items.get().get(id);
 	}
 
 	clear() {

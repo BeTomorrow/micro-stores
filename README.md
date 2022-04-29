@@ -92,7 +92,7 @@ Main methods and properties:
 | primaryKey            | string                                            | The primary key to use to map your objects                                         |
 | items                 | Observable\<Map\<string, T\>\>                    | The observable of the items mapped by their key                                    |
 | getObservable         | (key: string) => Observable\<T\>                  | Retrieve an observable using its key                                               |
-| fetch                 | (key: string) => void                             | Call the Store `fetch` function and saves the received item                        |
+| fetch                 | (key: string) => Promise<T>                       | Call the Store `fetch` function and saves the received item                        |
 | save                  | (item: T) => void                                 | Save an item to the Store. If an items exists will the same key, it will be erased |
 | merge                 | (items: T[]) => void                              | Save several items at once                                                         |
 | remove                | (key: string) => void                             | Remove an item from the Store                                                      |
