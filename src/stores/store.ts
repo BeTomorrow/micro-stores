@@ -1,8 +1,8 @@
 import { Observable, observable } from "micro-observables";
 import { Signal } from "micro-signals";
 import { F, O, S } from "ts-toolbelt";
-import { retrieveReference } from "../utils";
 import { v4 } from "uuid";
+import { retrieveReference } from "../utils";
 
 export interface ReferenceStore<T extends { [k in PrimaryKey]: string }, PrimaryKey extends string = "id"> {
 	primaryKey: PrimaryKey;
@@ -10,6 +10,10 @@ export interface ReferenceStore<T extends { [k in PrimaryKey]: string }, Primary
 	merge(items: readonly T[], updateId?: string): void;
 	batchUpdateProperties(items: readonly (Partial<T> & { [k in PrimaryKey]: string })[]): void;
 	onDelete: Signal<string>;
+	onUpdateAttemptOnNonExistingItem: Signal<{
+		key: string;
+		updater: (current: any) => any;
+	}>;
 }
 
 type PathValue<T, P extends string> = O.Path<T, S.Split<P, ".">>;
@@ -27,6 +31,10 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 	private referencedProperties: RefProp<string>[] = [];
 
 	onDelete = new Signal<string>();
+	onUpdateAttemptOnNonExistingItem = new Signal<{
+		key: string;
+		updater: (current: T) => T;
+	}>();
 
 	constructor(
 		private readonly _fetch: (id: string) => Promise<T> | T,
@@ -119,6 +127,8 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 		const item = this._itemsById.get().get(key);
 		if (item) {
 			this._itemsById.update((items) => new Map(items).set(item[this.primaryKey], updater(item)));
+		} else {
+			this.onUpdateAttemptOnNonExistingItem.dispatch({ key, updater });
 		}
 	}
 	remove(key: string) {

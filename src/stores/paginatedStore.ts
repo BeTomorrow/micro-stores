@@ -22,6 +22,27 @@ export class PaginatedStore<
 		this._referenceStore.onDelete.add((id) => {
 			this._deletedItems.update((s) => new Set(s).add(id));
 		});
+		this._referenceStore.onUpdateAttemptOnNonExistingItem.add(({ key, updater }) => {
+			this._paginatedItems.update((items) => {
+				if (!items) {
+					return null;
+				}
+				const newItems = {
+					...items,
+					content: items.content.map((item) => {
+						try {
+							if ((item as Presented)[this._referenceStore!.primaryKey] === key) {
+								return updater(item);
+							}
+							return item;
+						} catch (e) {
+							return item;
+						}
+					}),
+				};
+				return newItems;
+			});
+		});
 		this._paginatedItems.subscribe((data) => {
 			if (data === null) {
 				return;
