@@ -1,6 +1,6 @@
 {
   "name": "@betomorrow/micro-stores",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A light state management library featuring observables and immutability",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
