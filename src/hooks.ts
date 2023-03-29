@@ -37,7 +37,7 @@ export function useStore<T extends { [k in PrimaryKey]: string }, PrimaryKey ext
 	const hasFetched = useRef(false);
 	const result = useMemoizedObservable(() => store.getObservable(id || ""), [id]);
 
-	const [loading, setLoading] = useState(!result);
+	const [loading, setLoading] = useState(!result && !!id);
 	const [error, setError] = useState(null);
 
 	useEffect(() => {
