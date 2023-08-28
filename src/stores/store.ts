@@ -100,7 +100,11 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 	}
 	merge(items: T[], __updateId = v4()) {
 		this._itemsById.update(
-			(current) => new Map([...current, ...items.map((item) => [item[this.primaryKey], item] as const)])
+			(current) =>
+				new Map([
+					...current,
+					...items.map((item) => [item[this.primaryKey], { ...current.get(item[this.primaryKey]), ...item }] as const),
+				])
 		);
 		this._onNewElements.dispatch({ updateId: __updateId, content: items });
 	}
