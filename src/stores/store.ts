@@ -29,6 +29,7 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 	private _itemsById = observable(new Map<string, T>());
 	private _onNewElements = new Signal<{ updateId: string; content: T[] }>();
 	private referencedProperties: RefProp<string>[] = [];
+	private _deletedProperties = observable<Set<string>>(new Set());
 
 	onDelete = new Signal<string>();
 	onUpdateAttemptOnNonExistingItem = new Signal<{
@@ -62,6 +63,10 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 				return getProperty(subProperty, i + 1);
 			};
 
+			referenceStore.onDelete.add((id) => {
+				this._deletedProperties.update((s) => new Set(s).add(id));
+			});
+
 			referenceStore.merge(
 				content.map((item) => getProperty(item, 0) as V).filter((v) => v !== undefined),
 				path
@@ -73,14 +78,14 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 	get items(): Observable<Map<string, T>> {
 		if (this.referencedProperties.length > 0) {
 			return Observable.select(
-				[this._itemsById, ...this.referencedProperties.map((p) => p.store.items)],
-				(items, ...subItems) => {
+				[this._itemsById, this._deletedProperties, ...this.referencedProperties.map((p) => p.store.items)],
+				(items, deleted, ...subItems) => {
 					let newItems = [...items];
 					for (const [j, subItemsValues] of subItems.entries()) {
 						const keys = this.referencedProperties[j].path.split(".");
 						newItems = newItems.map(([k, v]) => [
 							k,
-							retrieveReference(v, 0, subItemsValues, keys, this.referencedProperties[j].store.primaryKey),
+							retrieveReference(v, 0, subItemsValues, keys, deleted, this.referencedProperties[j].store.primaryKey),
 						]);
 					}
 					return new Map(newItems);

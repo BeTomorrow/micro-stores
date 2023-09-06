@@ -48,6 +48,21 @@ describe("A store using references to another", () => {
 		authorStore.update("bram-stoker", (current) => ({ ...current, name: "Edited" }));
 		expect(dracula.get()?.infos.author.name).toEqual("Edited");
 	});
+
+	it("Fallbacks on its own value if not reference found", async () => {
+		authorStore.clear();
+		expect(bramStroker.get()).toBeNull();
+		expect(dracula.get()?.infos.author.name).toEqual("Bram Stoker");
+	});
+
+	it("Fallbacks on null if reference has been purposely deleted", async () => {
+		await authorStore.fetch("bram-stoker");
+		expect(bramStroker.get()?.name).toEqual("Bram Stoker Original");
+		expect(dracula.get()?.infos.author.name).toEqual("Bram Stoker Original");
+		authorStore.remove("bram-stoker");
+		expect(bramStroker.get()).toBeNull();
+		expect(dracula.get()?.infos.author).toBeNull();
+	});
 });
 
 describe("A store referencing itself", () => {

@@ -22,6 +22,7 @@ export function retrieveReference<TProperty, PrimaryKey extends string = "id">(
 	i: number,
 	itemsMap: Map<string, { [k in PrimaryKey]: string }>,
 	arrayPath: string[],
+	deletedProperties: Set<string>,
 	primaryKey?: PrimaryKey
 ): TProperty {
 	const key = arrayPath[i] as keyof TProperty;
@@ -29,12 +30,15 @@ export function retrieveReference<TProperty, PrimaryKey extends string = "id">(
 		return {
 			...property,
 			[key]:
-				property[key] &&
-				itemsMap.get((property[key] as unknown as { [k in PrimaryKey | "id"]: string })[primaryKey ?? "id"]),
+				(property[key] &&
+					itemsMap.get((property[key] as unknown as { [k in PrimaryKey | "id"]: string })[primaryKey ?? "id"])) ??
+				(deletedProperties.has((property[key] as unknown as { [k in PrimaryKey | "id"]: string })[primaryKey ?? "id"])
+					? null
+					: property[key]),
 		};
 	}
 	return {
 		...property,
-		[key]: property[key] && retrieveReference(property[key], i + 1, itemsMap, arrayPath, primaryKey),
+		[key]: property[key] && retrieveReference(property[key], i + 1, itemsMap, arrayPath, deletedProperties, primaryKey),
 	};
 }
