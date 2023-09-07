@@ -32,7 +32,7 @@ export function retrieveReference<TProperty, PrimaryKey extends string = "id">(
 			[key]:
 				(property[key] &&
 					itemsMap.get((property[key] as unknown as { [k in PrimaryKey | "id"]: string })[primaryKey ?? "id"])) ??
-				(deletedProperties.has((property[key] as unknown as { [k in PrimaryKey | "id"]: string })[primaryKey ?? "id"])
+				((property[key] && deletedProperties.has((property[key] as unknown as { [k in PrimaryKey | "id"]: string })[primaryKey ?? "id"]))
 					? null
 					: property[key]),
 		};
