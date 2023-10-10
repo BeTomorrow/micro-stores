@@ -75,6 +75,38 @@ export class Store<T extends { [k in PrimaryKey]: string }, PrimaryKey extends s
 		return this;
 	}
 
+	presentProperty<
+		PP extends string,
+		V extends Partial<PathValue<T, PP>> & { [k in OtherKey]: string },
+		OtherKey extends string = "id"
+	>(path: F.AutoPath<T, PP>, referenceStore: ReferenceStore<V, OtherKey>) {
+		this.referencedProperties.push({ path, store: referenceStore });
+		this._onNewElements.add(({ updateId, content }) => {
+			if (updateId === path) {
+				// Ensure we don't go in an infinite loop
+				return;
+			}
+			const keys = path.split(".");
+			const getProperty = <TProperty>(property: TProperty, i: number): unknown => {
+				const key = keys[i] as keyof TProperty;
+				const subProperty = property[key];
+				if (i >= keys.length - 1 || subProperty === undefined) {
+					return subProperty;
+				}
+				return getProperty(subProperty, i + 1);
+			};
+
+			referenceStore.onDelete.add((id) => {
+				this._deletedProperties.update((s) => new Set(s).add(id));
+			});
+
+			referenceStore.batchUpdateProperties(
+				content.map((item) => getProperty(item, 0) as V).filter((v) => v !== undefined)
+			);
+		});
+		return this;
+	}
+
 	get items(): Observable<Map<string, T>> {
 		if (this.referencedProperties.length > 0) {
 			return Observable.select(

@@ -79,9 +79,14 @@ console.log(bookStore.getObservable("dracula").get().infos.author);
 // { id: "bram-staker", name: "Bram Staker" }
 ```
 
-| Method       | Type                                                     | Description                               |
-| ------------ | -------------------------------------------------------- | ----------------------------------------- |
-| bindProperty | (path: string, referenceStore: Store\<U\>) => Store\<T\> | Binds your item property to another Store |
+**presentProperty**
+
+It has the same purpose as _bindProperty_, but can be used with lighter objects. This means that when fetching items from your store, it will not populate the presented Store with light values. However, it will update the presented store with updated value if they already exist.
+
+| Method          | Type                                                                | Description                                  |
+| --------------- | ------------------------------------------------------------------- | -------------------------------------------- |
+| bindProperty    | (path: string, referenceStore: Store\<U\>) => Store\<T\>            | Binds your item property to another Store    |
+| presentProperty | (path: string, referenceStore: Store\<Partial\<U\>\>) => Store\<T\> | Presents your item property to another Store |
 
 **Methods and properties**
 

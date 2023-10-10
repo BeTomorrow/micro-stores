@@ -83,6 +83,27 @@ describe("A store referencing itself", () => {
 	});
 });
 
+describe("A store presenting a light property", () => {
+	const authorStore = new Store(getAuthor, "_id");
+	const bramStroker = authorStore.getObservable("bram-stoker");
+	const bookStore = new Store(getLightBook).presentProperty("infos.author", authorStore);
+	const draculaBook = bookStore.getObservable("dracula");
+
+	it("Doesn't populate presented store", async () => {
+		await bookStore.fetch("dracula");
+		expect(bramStroker.get()).toBeNull();
+	});
+
+	it("Takes presented store value as source of truth", async () => {
+		await authorStore.fetch("bram-stoker");
+		expect(bramStroker.get()?._id).toEqual("bram-stoker");
+		expect(bramStroker.get()?.age).toEqual(10);
+		expect(draculaBook.get()?.infos.author.name).toEqual("Bram Stoker Original");
+		authorStore.update("bram-stoker", (v) => ({ ...v, name: "New Bram Stoker" }));
+		expect(draculaBook.get()?.infos.author.name).toEqual("New Bram Stoker");
+	});
+});
+
 function getAuthor(id: string) {
 	return {
 		_id: id,
@@ -104,6 +125,7 @@ interface Book {
 		author: Author;
 	};
 }
+
 function getBook(id: string): Book {
 	return {
 		id,
@@ -114,6 +136,32 @@ function getBook(id: string): Book {
 				_id: "bram-stoker",
 				name: "Bram Stoker",
 				age: 70,
+			},
+		},
+	};
+}
+
+interface LightAuthor {
+	_id: string;
+	name: string;
+}
+interface LightBook {
+	id: string;
+	title: string;
+	infos: {
+		published: Date;
+		author: LightAuthor;
+	};
+}
+function getLightBook(id: string): LightBook {
+	return {
+		id,
+		title: "Dracula",
+		infos: {
+			published: new Date(),
+			author: {
+				_id: "bram-stoker",
+				name: "Bram Stoker",
 			},
 		},
 	};
