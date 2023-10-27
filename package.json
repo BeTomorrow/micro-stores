@@ -43,13 +43,13 @@
 		"react": ">=16.8.0"
 	},
 	"dependencies": {
-		"@types/react": "^17.0.17",
 		"micro-observables": "^1.7.2",
 		"micro-signals": "^2.4.0",
 		"ts-node": "^10.1.0",
 		"uuid": "^8.3.2"
 	},
 	"devDependencies": {
+		"@types/react": "^17.0.17",
 		"@types/jest": "^26.0.24",
 		"@types/node": "^16.4.5",
 		"@types/uuid": "^8.3.1",

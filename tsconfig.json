@@ -2,7 +2,6 @@
 	"compilerOptions": {
 		"strict": true,
 		"lib": ["esnext"],
-		"types": ["node"],
 		"jsx": "react",
 		"target": "es6",
 		"module": "esnext",
